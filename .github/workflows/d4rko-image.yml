@@ -24,6 +24,6 @@ jobs:
         with:
           context: images/win64
           push: true
-          tags: ghcr.io/0GMou/d4rko-win64:stable,ghcr.io/0GMou/d4rko-win64:latest
+          tags: ghcr.io/0gmou/d4rko-win64:stable,ghcr.io/0GMou/d4rko-win64:latest
           provenance: false
           sbom: false
