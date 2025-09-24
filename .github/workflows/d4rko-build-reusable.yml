@@ -5,7 +5,7 @@ on:
       container_image:
         type: string
         required: true
-      build_action:
+      build_script:
         type: string
         required: true
       artifact_glob:
@@ -31,15 +31,19 @@ jobs:
           path: |
             .cache
             toolchains
-          key: ${{ runner.os }}-x86_64-${{ hashFiles('**/CMakeLists.txt') }}
-      - uses: ${{ inputs.build_action }}
+          key: ${{ runner.os }}-x86_64-${{ hashFiles('**/*') }}
+      - name: Run build script
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash "${{ inputs.build_script }}"
       - uses: actions/cache/save@v4
         if: always()
         with:
           path: |
             .cache
             toolchains
-          key: ${{ runner.os }}-x86_64-${{ hashFiles('**/CMakeLists.txt') }}
+          key: ${{ runner.os }}-x86_64-${{ hashFiles('**/*') }}
       - uses: actions/upload-artifact@v4
         with:
           name: windows-x86_64
