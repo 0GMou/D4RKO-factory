@@ -1,0 +1,61 @@
+name: D4RKO build reusable
+on:
+  workflow_call:
+    inputs:
+      container_image:
+        type: string
+        required: true
+      build_action:
+        type: string
+        required: true
+      artifact_glob:
+        type: string
+        required: true
+      release_tag:
+        type: string
+        required: false
+        default: ""
+    secrets:
+      GH_TOKEN:
+        required: false
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ${{ inputs.container_image }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            .cache
+            toolchains
+          key: ${{ runner.os }}-x86_64-${{ hashFiles('**/CMakeLists.txt') }}
+      - uses: ${{ inputs.build_action }}
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            .cache
+            toolchains
+          key: ${{ runner.os }}-x86_64-${{ hashFiles('**/CMakeLists.txt') }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64
+          path: ${{ inputs.artifact_glob }}
+  publish:
+    if: ${{ inputs.release_tag != '' }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x86_64
+          path: dist
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+        run: |
+          gh release view "${{ inputs.release_tag }}" >/dev/null 2>&1 || gh release create "${{ inputs.release_tag }}" -t "${{ inputs.release_tag }}"
+          gh release upload "${{ inputs.release_tag }}" dist/** --clobber
